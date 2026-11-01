@@ -371,7 +371,7 @@ const roomCache=new Map();
 function roomFor(cell){
   const key=seed+':'+cell;if(roomCache.has(key))return roomCache.get(key);
   let R=null;const y0=TOP+20+cell*ROOMCELL+Math.floor(h2(cell,2,701)*14),m=(y0-TOP)%LAYER;
-  if(cell>=0&&h2(cell,1,700)<0.62&&m>4&&m<LAYER-26){
+  if(cell>=0&&h2(cell,1,700)<0.45&&m>4&&m<LAYER-26){
     const h=8+Math.floor(h2(cell,3,702)*4),w=15+Math.floor(h2(cell,4,703)*9),sx=shaftX(y0+h/2);
     let x0=h2(cell,5,704)<0.5?Math.round(sx-14-w-h2(cell,6,705)*10):Math.round(sx+14+h2(cell,6,705)*10);
     if(x0<4)x0=Math.round(sx+14);if(x0+w>W-4)x0=Math.round(sx-14-w);
@@ -395,11 +395,11 @@ function roomTile(x,y){
   }
   const cx=Math.floor((x0+x1)/2),far=R.doorRight?x0+1:x1-1;
   switch(R.type){
-    case'vault':if(y===fl&&(x===cx||x===cx-4||x===cx+4))return 5;if(y===y0+1&&(x-x0)%4===2)return 6;break;
+    case'vault':if(y===fl&&x===cx)return 5;if(y===y0+1&&(x-x0)%4===2)return 6;break;
     case'trap':if(y===fl&&x===far)return 5;if(y===fl&&Math.abs(x-doorW)>2&&Math.abs(x-far)>1&&x%2===0)return 10;break;
     case'shrine':if(y===fl&&x===cx)return 12;if((x===x0+3||x===x1-3)&&y<=y0+3)return 9;if(y===y0+1&&(x===x0+5||x===x1-5))return 6;break;
     case'piston':if(y===fl&&x===far)return 5;if(y===y0+1&&(x-x0)%5===2)return 6;break;
-    case'corpse':if(y===fl&&x===cx)return 13;if(y===fl&&x===cx+3&&h2(R.cell,9,707)<0.45)return 5;break;
+    case'corpse':if(y===fl&&x===cx)return 13;if(y===fl&&x===cx+3&&h2(R.cell,9,707)<0.15)return 5;break;
     case'merchant':if(y===fl&&x===cx)return h2(R.cell,11,708)<0.3?22:14;if(y===y0+1&&(x===cx-4||x===cx+4))return 6;break;
   }
   return 0;
@@ -434,7 +434,7 @@ const chunks=new Map();
 function genChunk(cy){
   const a=new Uint8Array(W*CH);
   for(let ly=0;ly<CH;ly++){
-    const y=cy*CH+ly,L=layerOf(y),M=layerMods(L),cr=(0.0015+Math.min(0.001,L*0.00008))*(M.bounty?2.2:1),rr=roomRow(y);
+    const y=cy*CH+ly,L=layerOf(y),M=layerMods(L),cr=(0.0008+Math.min(0.0006,L*0.00005))*(M.bounty?1.6:1),rr=roomRow(y);
     for(let x=0;x<W;x++){
       let t=gen(x,y);
       if(t===0&&y>TOP+6&&(y-TOP)%LAYER<LAYER-7&&!(rr&&x>=rr.x0&&x<rr.x0+rr.w)){
@@ -454,7 +454,7 @@ function genChunk(cy){
     const L=layerOf(y),M=layerMods(L),rr=roomRow(y);
     for(let x=3;x<W-3;x++){
       const i=ly*W+x,t=a[i];
-      if((t===1||t===9)&&(L>=5||(t===9&&L>=2))&&!used[x+','+y]&&(a[i-1]===0||a[i+1]===0||a[i-W]===0||a[i+W]===0)&&h2(x,y,1320)<(t===9?0.03:0.0025)){a[i]=20;continue;}
+      if((t===1||t===9)&&(L>=5||(t===9&&L>=2))&&!used[x+','+y]&&(a[i-1]===0||a[i+1]===0||a[i-W]===0||a[i+W]===0)&&h2(x,y,1320)<(t===9?0.015:0.0012)){a[i]=20;continue;}
       if(t!==0||(rr&&x>=rr.x0&&x<rr.x0+rr.w))continue;
       const belowS=SOLID(a[i+W]);
       if(M.grove&&belowS&&h2(x,y,1300)<0.06){
@@ -975,7 +975,7 @@ function killEnemy(e){
   if(e.type===5&&e.gen<2)for(let i=0;i<2;i++){const c=makeEnemy(5,e.x+e.w/4,e.y,false,e.L,{sz:(e.w/EDEF[5].w)*0.7,hpm:0.45*Math.pow(0.6,e.gen)*(e.elite?5:1)});c.gen=e.gen+1;c.vx=(i?1:-1)*rand(120,200);c.vy=-rand(200,320);c.mt=0.6;enemies.push(c);}
   if(e.type===7){const r=Math.min(4,(e.mimicR||0)+1);spawnRelic(e.L,r,'擬態箱の腹',Math.min(e.mimicQ||1,TIERP[r]));}
   else if(e.type===10){const q=rollQ(e.L,2);spawnRelic(e.L,q.rar,'偽りの行商人の懐',q.q);}
-  else if((e.type===8&&Math.random()<0.25)||(e.type===9&&Math.random()<0.4)){const q=rollQ(e.L,1);spawnRelic(e.L,q.rar,e.type===8?'壁擬きの腹':'樹擬きの洞',q.q);}
+  else if((e.type===8&&Math.random()<0.05)||(e.type===9&&Math.random()<0.15)){const q=rollQ(e.L,1);spawnRelic(e.L,q.rar,e.type===8?'壁擬きの腹':'樹擬きの洞',q.q);}
   else if(e.elite&&Math.random()<0.3){const g=rollQ(e.L,1);spawnRelic(e.L,g.rar,'強個体の亡骸',g.q);}
   else if(!e.elite&&Math.random()<0.003){const g=rollQ(e.L);spawnRelic(e.L,g.rar,'原生生物の体内',g.q);}
   fire('kill',{x:e.x+e.w/2,y:e.y+e.h/2});
@@ -1907,7 +1907,7 @@ function readCorpse(x,y){
   const n=st.journal||0,L=layerOf(y),g=Math.round(15*P(L));
   const txt=n<JOURNAL.length?JOURNAL[n]:pick(JOURNAL_X),title=n<JOURNAL.length?`ユラの日誌 ${n+1} / ${JOURNAL.length}`:'名も知らぬ潜り手の走り書き';
   st.journal=n+1;st.frag+=g;st.used[x+','+y]=1;setTile(x,y,16);sfx('heal');
-  let rel=null;if(Math.random()<0.35){const q=rollQ(L,1);rel=spawnRelic(L,q.rar,'潜り手の亡骸',q.q);}
+  let rel=null;if(Math.random()<0.15){const q=rollQ(L,1);rel=spawnRelic(L,q.rar,'潜り手の亡骸',q.q);}
   save();
   openDlg(`<div class="jhead">潜り手の亡骸 ・ 第${L}層</div><h2 style="margin-top:6px">${esc(title)}</h2><div class="jtext">${esc(txt)}</div>
     <div class="note">亡骸のそばに欠片 ${fmt(g)} が残っていた。${rel?`遺品「<span style="color:${RCOL[rel.rarity]}">${esc(rel.name)}</span>」を受け継いだ。`:''}</div><div class="btns"><button class="pri" data-act="close">閉じる</button></div>`);
